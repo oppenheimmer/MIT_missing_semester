@@ -24,5 +24,4 @@ The standard curriculum is missing critical topics about the computing education
 
 - **Virtual machines**: Try out new systems and isolate projects, keeping machine clean & tidy.
 
-- **Security**: Effectively and efficiently manage computer security. Basics
-of encryption, computer network security etc.
+- **Security**: Effectively and efficiently manage computer security. Basics of encryption, computer network security etc.

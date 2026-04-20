@@ -2,11 +2,13 @@
 
 ## Elementary scripting
 
-So far, we have seen how to execute individual commands and pipe them. However in many scenarios you will want to perform a series of commands and make use of control flow expressions, like `conditionals` or `loops`. We might also require `functions` for repetitive block of commands.
+We have learned how to execute individual commands and connect them using pipelines. However, in many situations you will need to run a sequence of commands and use control flow constructs such as `conditionals` and `loops`. You may also need to define a `function` to reuse blocks of commands.
 
-Shell scripts are the next logical step. Most shells have their own scripting syntax with variables and control flow. What makes shell scripting different from other programming languages is that it is optimized for performing shell-related tasks. Thus, creating command pipelines, saving results into files, and reading from standard input are primitives in shell scripting, which makes it easier to use than general purpose languages.
+Shell scripts are the answer. Most shells provide their own scripting syntax, including support for *variables* and *control flow*. What distinguishes shell scripting from general-purpose programming languages is that it is specifically designed for the shell and the operating system. Creating command sequences, redirecting output to files, and reading from standard input are fundamental operations in shell scripts. As a result, shell scripting is often convenient for automating command-line workflows.
 
-To assign variables in bash, consider this example
+## Variables
+
+To assign variables some value, consider this example
 
 ```console
 ~$ foo=bar 
@@ -14,9 +16,7 @@ To assign variables in bash, consider this example
    bar
 ```
 
-We access the value of the variable with `$` (i.e. `$varname`). The symbol `$` is a special token in shells and usually mean a certain value (either a built in feature or a variable). Note that `foo = bar` will not work since it is interpreted as calling program named `foo` with `=` and `bar` as arguments. In general, the space character performs argument splitting.
-
-Strings in bash can be defined with `'` and `"` delimiters, but they are not equivalent. Strings delimited with `'` are *literal strings* and will not substitute value of the variable. Whereas `"` delimited strings will show the variable or token value, when invoked.
+We can access a variable’s value using `$` (for example, `$varname`). Note that `foo = bar` will not work because of the whitespace around `=`. The shell interprets this as a command named `foo` with `=` and `bar` as arguments, rather than as a variable assignment. Strings can be defined using either single quotes (`'`) or double quotes (`"`), but they are not equivalent. Strings enclosed in single quotes are treated as *literal strings* and do not perform variable or command substitution. In contrast, strings enclosed in double quotes allow *variable expansion* and other substitutions, so variables and certain tokens are evaluated when the string is used.
 
 ```console
 ~$ foo=bar
@@ -26,7 +26,7 @@ Strings in bash can be defined with `'` and `"` delimiters, but they are not equ
    $foo
 ```
 
-As with most programming languages, `bash` supports control flow techniques including `if`, `case`, `while` and `for`. Similarly, `bash` has functions that take arguments and can operate with them. Here is an example of a function that creates a directory with an input argument, and `cd` into it.
+As with most programming languages, `bash` supports control flow constructs such as `if`, `case`, `while` and `for`. It also supports functions that accept arguments and operate on them. Here is an example:
 
 ```bash
 mcd () {
@@ -35,36 +35,25 @@ mcd () {
 }
 ```
 
-`$1` is the first argument to the function. Unlike other scripting languages, bash uses a variety of special variables to refer to arguments, error codes, and other relevant variables. Below is a brief list:
+`$1` refers to the first positional argument passed to a function or script. Unlike many other scripting languages, Bash uses a set of special parameters to reference arguments, exit statuses, and other execution-related values. Below is a brief list:
 
-- `$0`      -   Name of the script
-- `$1`-`$9` -   Arguments order to the script. `$1` is the first.
-- `$@`      -   All the arguments
-- `$#`      -   Number of arguments received
-- `$?`      -   Return code of the previous command
-- `$$`      -   Process identification number (PID) for the current script
-- `!!`      -   Entire last command, including arguments.
-- `$_`      -   Last argument from the last command.
+- `$0`      - Script name  
+- `$1`–`$9` - Positional parameters passed to the script. `$1` is the first argument, `$2` the second, and so on (up to `$9`).  
+- `$@`      - All positional parameters, treated as separate quoted arguments (`"$@"`).  
+- `$#`      - Number of positional parameters passed to the script.  
+- `$?`      - Exit status of the most recently executed command.  
+- `$$`      - Process ID (PID) of the current shell or script.  
+- `!!`      - The entire previous command, including its arguments (history expansion, interactive shells).  
+- `$_`      - The last argument of the previous command.  
 
-For example,
 
-```console
-$ man top 
-➜   
-➜ echo $_
-  top
-➜ echo $?
-  0
-```
+User-defined functions must either be *sourced* into the current shell session or placed in a directory included in `$PATH` to be accessible as commands. Commands typically write normal output to `STDOUT`, error messages to `STDERR`, and provide an integer return value to indicate execution status. This *exit status* or *return code* is how commands communicate success or failure. An exit status of `0` represents success, while any nonzero value represents failure. Conditional execution (&&, ||, if) depends on the numeric exit status of commands. In shell semantics, `true` returns `0`, and `false` returns `1`. Exit statuses can be used to control conditional execution with `&&` (AND) and `||` (OR). These are short-circuit operators:
 
-Custom created functions need to be *sourced* or added to `$PATH`. Commands will often return output using `STDOUT`, errors through `STDERR`, and a return code to report errors in a more script-friendly manner. The *return code* or *exit status* is the way commands communicate the execution status. A value of 0 usually means everything went OK; anything different from 0 means an error occurred. `True` will have 0 error code and `False` will always be 1.
+* For the `OR` operator (`||`), the second command executes only if the first command fails (nonzero exit status).
+* For the `AND` operator (`&&`), the second command executes only if the first command succeeds (exit status `0`).
 
-Exit codes can be used to conditionally execute commands using `&&` (AND operator) and `||` (OR operator). These are short-circuit operators and the second condition in such statements are evaluated only depending on the first. (Always remember `false=1` and as soon as zero-error code is found, the command exits.)
+Commands can also be separated on the same line using a semicolon (`;`). Let's see some examples.
 
-> - For `OR` operator, the second command executes only if the first fails.
-> - For `AND` operator, the second one executes if the first executed.
-
-Commands can also be separated within the same line using a semicolon `;`. Let's see some examples
 
 ```bash
 $ false || echo "Oops, fail"
@@ -86,25 +75,6 @@ $ false ; echo "This will always run"
 # prints This will always run
 ```
 
-## Command and Process substitution
-
-A common pattern is wanting to get the output of a command as a variable. This can be done with *command substitution*. Whenever you place `$(CMD)` it will execute `CMD`, get the output of the command and substitute it in place. For example,
-
-```console
-~$ for file in $(ls)
-```
-
-In this example, the shell will first call `ls` and store it in a variable. Then the loop iterates over values stored in that variable.
-
-```console
-~$ echo "We are in $(pwd)" # Double quotes expands value within
-```
-
-A lesser known similar feature is *process substitution*. `<(CMD)` will execute `CMD` and place the output in a temporary file & substitute the `<( )` with that temporary file's name. This is useful when commands expect values to be passed by file instead of by STDIN. For example, `diff <(ls .) <(ls ..)` will show differences between files in current directory and its parent.
-
-> - `Command substitution`: Shell executes the command and places value in a variable to make use in other place, unless overwritten by similar invocation.
-> - `Process substitution`: Shell executes command and places the value in a temporary file. The command then points to the temporary file instead of the location it originated in, for use by the shell.
-
 ```bash
 #!/bin/bash
 
@@ -124,17 +94,30 @@ for file in "$@"; do
 done
 ```
 
-### Notes
 
-- In the comparison we tested whether `$?` was not equal to 0. Bash implements many comparisons of this sort - we can find a detailed list in the manpage for `test`
 
-- When performing comparisons in bash, try to use double brackets `[[ ]]` in favor of simple brackets `[ ]`. Chances of making mistakes are lower although it won't be portable to `sh`.
+## Command and Process substitution
 
-- When launching scripts, often we require arguments that are similar in pattern. `bash` has ways of making this easier, expanding expressions by carrying out filename expansion. These techniques are often referred to as shell *globbing*.
+Sometimes we require the output of a command as an input to another command or assign it to a variable. This can be done with *command substitution*. Whenever you place `$(CMD)`, it will execute `CMD`, capture its output, and substitute it in place. For example, consider this snippet:
 
-- **Wildcard**: Whenever you want to perform some sort of wildcard matching, you can use `?` and `*` to match one or any amount of characters respectively. For instance, given files `foo`, `foo1`, `foo2`, `foo10` and `bar`, the command `rm foo?` will delete `foo1` and `foo2` whereas `rm foo*` will delete all but `bar`.
+```console
+~$ echo "We are in $(pwd)" # Double quotes expand values within
+```
 
-- **Brace expansion**: `{}` Whenever you have a common substring in a series of commands, you can use curly braces for bash to expand this automatically. This comes in very handy when moving or converting files.
+A lesser-known similar feature is *process substitution*. <(CMD) executes CMD and exposes its output as a file-like object (often a named pipe or `/dev/fd` entry), whose path replaces the `<(...)` expression. This is useful when commands expect input to be passed by file instead of by standard input `STDIN`. For example, `diff <(ls .) <(ls ..)` will show the differences between files in the current directory and its parent.
+
+> * `Command substitution`: The shell executes a command and replaces the substitution expression with the command’s output.
+> * `Process substitution`: The shell executes a command and exposes its output as a file-like object (typically a named pipe or `/dev/fd` entry), whose path is substituted into the command line.
+
+
+### Wildcard and Brace expansion
+
+When launching scripts, we often require arguments that follow a similar pattern. `bash` provides mechanisms to simplify this by expanding expressions through filename expansion. These techniques are commonly referred to as shell *globbing*.
+
+* **Wildcard**: To perform wildcard matching, you can use `?` and `*` to match exactly one character and zero or more characters, respectively. For instance, given the files `foo`, `foo1`, `foo2`, `foo10`, and `bar`, the command `rm foo?` will delete `foo1` and `foo2`, whereas `rm foo*` will delete `foo`, `foo1`, `foo2`, and `foo10`, but not `bar`.
+
+* **Brace expansion**:  When you have a common substring in a series of filenames or commands, you can use curly braces to expand this automatically. For example, `mv file{1,2,3}.txt backup/` expands to `mv file1.txt file2.txt file3.txt backup/`. This is particularly useful when moving or converting multiple files with predictable names.
+
 
 ```bash
 convert image.{png,jpg}
@@ -162,9 +145,7 @@ diff <(ls foo) <(ls bar)
 
 ## Scripting Tools
 
-Writing `bash` scripts can be tricky and unintuitive. There are tools like [shellcheck](https://github.com/koalaman/shellcheck) that will help you find errors in your shell scripts.
-
-Note that scripts need not necessarily be written in bash to be called from the terminal. For instance, here's a simple Python script that outputs its arguments in reversed order:
+Writing `bash` scripts can be tricky and unintuitive. There are tools like [shellcheck](https://github.com/koalaman/shellcheck) that will help you find errors in your shell scripts. Note that scripts do not necessarily need to be written in Bash to be executed from the terminal. For instance, here is a simple Python script that outputs its arguments in reverse order:
 
 ```python
 #!/usr/bin/env python
@@ -173,107 +154,102 @@ for arg in reversed(sys.argv[1:]):
     print(arg)
 ```
 
-The kernel knows to execute this script with a python interpreter instead of a shell command because we included a shebang `#!`. It is good practice to write shebang lines using the `env` command that will resolve to wherever the command lives, increasing the portability. To resolve the location, `env` will make use of the `PATH` environment variable, instead of any hardcoded path. So depending on the current environment, it could point to `/usr/bin/python` or the python inside a `anaconda` or `virtualenv` binary store.
+The kernel uses the shebang to determine which interpreter to invoke. It does not "know" in a semantic sense; it parses the first line. It is good practice to write shebang lines using the `env` command, which resolves the interpreter’s location and increases portability. To determine the correct executable, `env` uses the `PATH` environment variable rather than a hardcoded path. Depending on the current environment, this could resolve to `/usr/bin/python` or to a Python interpreter inside an `Anaconda` or `virtualenv` environment.
 
-Some differences between shell functions and scripts that is worth remembering:
 
-- Shell Functions have to follow the shell syntax , while scripts can be written in any language e.g. Python. This is why including a shebang for scripts is important.
-
-- Functions are loaded once when their definition is read by environment (i.e. by source or $PATH initialization). Scripts are loaded every time they are executed. This makes functions slightly faster, but whenever we change them, we have to reload.
-
-- Functions are executed in the **current shell environment** whereas scripts execute in their own separate **process**. Thus, functions can modify environment variables, e.g. change your current directory, whereas scripts can't.
-
-- As with any programming language, functions are a powerful construct to achieve modularity, code reuse, and clarity of shell code. Often shell scripts will include their own function definitions.
 
 ## Shell Tools
 
 ### Finding flags and options
 
-You might be wondering how to find the flags and options for the commands we use. The first-order approach is to call said command with the `-h` or `--help` flags. `--help` or `-h` is often a hallmark of `bash` and may not extend always to other shells. A more detailed approach is to use the `man` command, which usually includes the full manual and also covers the manual description for special variables and token in the OS platform. [TLDR pages](https://tldr.sh/) is a nifty complementary solution to get information faster.
+You might be wondering how to find the flags and options for the commands we use. The first approach is to call the command with the `-h` or `--help` flags. `--help` or `-h` is commonly supported by many command-line programs, but it is not guaranteed in all shells or utilities. A more detailed approach is to use the `man` command, which usually provides the full manual and covers descriptions for special variables and tokens in the operating system. [TLDR pages](https://tldr.sh/) are a useful complementary resource.
 
 ### Finding files
 
-One of the most common repetitive tasks that every programmer faces is finding files or directories. All UNIX-like systems come packaged with `find` , a great shell tool to find files. `find` will recursively search for files matching some criteria. Some examples:
+One of the most common repetitive tasks that every programmer faces is finding files or directories. All UNIX-like systems come packaged with `find`, a powerful shell utility for locating files. `find` recursively searches for files that match specified criteria. Some examples:
 
 ```bash
 # Find all directories named src
-find . -name src -type d
+find . -type d -name src
 
-# Find all python files that have a folder named test in their path
-find . -path '*/test/*.py' -type f
+# Find all Python files that have a folder named test in their path
+find . -type f -path '*/test/*.py'
 
 # Find all files modified in the last day
 find . -mtime -1
 
-# Find all zip files with size in range 500k to 10M
-find . -size +500k -size -10M -name '*.tar.gz'
+# Find all tar.gz files with size in range 500k to 10M
+find . -type f -name '*.tar.gz' -size +500k -size -10M
 ```
 
-Beyond listing files, `find` can also execute over files that match your query. This property can be incredibly helpful to simplify what could be fairly monotonous tasks.
+Beyond listing files, `find` can also execute commands on files that match your query. This capability can be extremely helpful in automating otherwise monotonous tasks.
 
 ```bash
 # Delete all files with .tmp extension
-find . -name '*.tmp' -exec rm {} \;
+find . -type f -name '*.tmp' -exec rm {} \;
 
 # Find all PNG files and convert them to JPG
-find . -name '*.png' -exec convert {} {}.jpg \;
+find . -type f -name '*.png' -exec sh -c 'convert "$1" "${1%.png}.jpg"' _ {} \;
 ```
 
-Despite `find`'s ubiquitousness, its syntax can sometimes be tricky to remember. For instance, to simply find files that match some pattern `PATTERN` you have to execute `find -name '*PATTERN*'` (or `-iname` if you want the pattern matching to be case insensitive). You could start building aliases for those scenarios, but part of the shell philosophy is that it is good to explore alternatives.
+Despite `find`'s ubiquity, its syntax can sometimes be tricky to remember. For instance, to find files in the current directory that match a pattern `PATTERN`, you would run `find . -name '*PATTERN*'` (or `-iname` for case-insensitive matching). You could create aliases for common use cases, but part of the shell philosophy is to explore alternative tools when appropriate.
 
-- `fd` is a complement to `find` command
-- `locate` uses a database that is updated using `updatedb`. In most systems, `updatedb` is updated daily via `cron`
+* `fd` is a user-friendly alternative to the `find` command.
+* `locate` uses a database that is updated via `updatedb`. On most systems, `updatedb` runs daily as a `cron` job.
 
-### Finding code
+### Finding Code
 
-Finding files by name is useful, but quite often you want to search based on some file *content*. A common scenario is wanting to search for all files that contain some pattern, along with where in those files said pattern occurs. To achieve this, most UNIX-like systems provide `grep`, a generic tool for matching patterns from the input text.
+Finding files by name is useful, but often you need to search based on file *content*. A common task is to find all files that contain a specific pattern and see where in those files the pattern appears. Most Unix-like systems provide `grep`, a general-purpose tool for matching patterns in text.
 
-`grep` has many flags that make it a very versatile tool.
+`grep` has many flags that make it a versatile tool:
 
-- `-C N` for getting *context* N lines before and after the match.
-- `-v` for inverting the match, i.e. print lines that do **not** match.
-- `-R` for recursive searching in a directory.
+* `-C N` — show *N* lines of context before and after each match.
+* `-v` — invert the match (print lines that do **not** match).
+* `-R` — search directories recursively.
 
-For now we are sticking with ripgrep (`rg`), given how fast and intuitive it is. Some examples:
+In this guide, we use ripgrep (`rg`) because it is fast and easy to use. Examples:
 
 ```bash
-# Find all python files where I used the requests library
+# Find all Python files where the requests library is imported
 rg -t py 'import requests'
 
-# Find all files (including hidden files) without a shebang line
+# Find all files (including hidden files) that do not contain a shebang line
 rg -u --files-without-match "^#!"
 
-# Find all matches of foo and print 5 following lines after match
+# Find all matches of "foo" and print 5 lines after each match
 rg foo -A 5
 
-# Print statistics of matches (# of matched lines and files )
+# Print match statistics (number of matched lines and files)
 rg --stats PATTERN
 ```
 
-### Finding shell commands
+### Command History
 
-So far we have seen how to find files, but as you start spending more time in the shell, you may want to find specific commands you typed at some point. The first thing to know is that typing the up arrow will give you back your last command, and if you keep pressing it you will slowly go through your shell history.
+So far, we have seen how to find files. As you spend more time in the shell, you may want to retrieve specific commands you typed earlier. Pressing the up arrow shows your last command. Press it repeatedly to move backward through your shell history.
 
-The `history` command will let you access your command history programmatically. It will print your shell history to the standard output. If we want to search there we can pipe that output to `grep`. e.g. `history | grep find` will print commands that contain the substring "*find*".
+The `history` command lets you access your command history programmatically. It prints your shell history to standard output. To search it, you can pipe the output to `grep`. For example, `history | grep find` prints commands that contain the substring `find`.
 
-In most shells, you can make use of `Ctrl+R` to perform backwards search through your history. After pressing `Ctrl+R`, you can type a substring you want to match for commands in your history. As you keep pressing it, you will cycle through the matches in your history.
+In most shells, you can use `Ctrl+R` to perform a reverse search through your history. After pressing `Ctrl+R`, type a substring to search for matching commands. Press `Ctrl+R` again to cycle through additional matches.
 
-A nice addition on top of `Ctrl+R` comes with using `fzf`. `fzf` is a general-purpose fuzzy finder that can be used with many commands. It can be used to fuzzily match through your history and present results in a convenient and visually pleasing manner.
+You can enhance this workflow with `fzf`, a general-purpose fuzzy finder. It can search your command history interactively and display matches in a more convenient way.
 
 ### Directory Navigation
 
-So far, we assumed that you are already where you need to be. But how do you go about quickly navigating directories? There are many simple ways that you could do this, such as writing shell aliases or creating symlinks with `ln -s`, but the truth is that developers have figured out several sophisticated solutions by now.
+So far, we assumed you are already in the correct directory. How can you navigate directories more efficiently? You can define shell aliases or create symbolic links with `ln -s`, but several more advanced tools are available.
 
-Finding frequent and/or recent files and directories can be done via:
+You can find frequently and recently used files and directories with:
 
-- [`fasd`](https://github.com/clvv/fasd), which allows quick access to files and directories for POSIX shells.
-- [`autojump`](https://github.com/wting/autojump), the original inspiration for `fasd`.
+* [`fasd`](https://github.com/clvv/fasd), which provides quick access to files and directories in POSIX shells.
+* [`autojump`](https://github.com/wting/autojump), an earlier tool that inspired `fasd`.
 
-`fasd` ranks files and directories by *frecency* i.e. by both *frequency* and *recency*. By default, `fasd` adds a `z` command that you can use to quickly `cd` using a substring of a *frecent* directory. For example, if `/home/user/files/cool_project` is used often, using `z cool` we can jump there. Using autojump, this same change of directory could be accomplished using `j cool`. More complex tools exist to quickly get an overview of a directory structure:
+`fasd` ranks files and directories by *frecency* (a combination of frequency and recency). By default, it adds a `z` command that lets you `cd` to a directory using a substring of a frequently and recently used path. For example, if `/home/user/files/cool_project` is used often, running `z cool` will jump to it. With `autojump`, you can achieve the same result using `j cool`.
 
-- [`tree`](https://linux.die.net/man/1/tree)
-- [`broot`](https://github.com/Canop/broot)
-- [`ranger`](https://github.com/ranger/ranger)
+Other tools provide a structured overview of directory contents:
+
+* [`tree`](https://linux.die.net/man/1/tree)
+* [`broot`](https://github.com/Canop/broot)
+* [`ranger`](https://github.com/ranger/ranger)
+
 
 ## Exercises
 
@@ -312,10 +288,12 @@ polo() {
 #!/usr/bin/env bash
 
 count=0
-until [[ "$?" -ne 0 ]];
-do
+while true; do
   count=$((count+1))
   ./random.sh &> out.txt
+  if [[ $? -ne 0 ]]; then
+    break
+  fi
 done
 
 echo "found error after $count runs"
@@ -325,13 +303,13 @@ cat out.txt
 - As we covered in the lecture `find`'s `-exec` can be very powerful for performing operations over the files we are searching for. However, what if we want to do something with all the files, like e.g. creating a zip file. As you have seen so far commands will take input from both arguments and `STDIN`. When piping commands, we are connecting `STDOUT` to `STDIN`, but some commands like `tar` take inputs from arguments. To bridge this disconnect there's the `xargs` command which will execute a command using `STDIN` as arguments. For example `ls | xargs rm` will delete the files in the current directory. Your task is to write a command that recursively finds all HTML files in the folder and makes a zip with them. Note that your command should work even if the files have spaces.
 
 ```bash
-find . -type f -name "*.html" -print0 | xargs -0 zip -r html_files.zip
+find . -type f -name "*.html" -print0 | xargs -0 zip html_files.zip
 ```
 
-`xargs -0` takes the null-separated file names from `find`` and passes them as arguments to the next command.
+`xargs -0` takes the null-separated file names from `find` and passes them as arguments to the next command.
 
 - Listing files by recency?
 
 ```bash
-ls -alc
+ls -alth
 ```
